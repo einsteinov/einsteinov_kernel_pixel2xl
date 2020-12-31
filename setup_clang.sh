@@ -7,7 +7,7 @@
 #
 
 # Path to executables in Clang toolchain
-clang_bin="$HOME/toolchains/proton-clang/bin"
+clang_bin="$HOME/kernel/toolchains/proton-clang/bin"
 
 # 64-bit GCC toolchain prefix
 gcc_prefix64="aarch64-linux-gnu-"
@@ -43,5 +43,5 @@ kmake_flags+=(
 	CROSS_COMPILE="$gcc_prefix64"
 	CROSS_COMPILE_ARM32="$gcc_prefix32"
 
-	KBUILD_COMPILER_STRING="$(get_clang_version clang)"
+	#KBUILD_COMPILER_STRING="$(get_clang_version clang)"
 )

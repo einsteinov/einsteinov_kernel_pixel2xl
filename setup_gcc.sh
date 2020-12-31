@@ -7,7 +7,7 @@
 #
 
 # 64-bit GCC toolchain prefix
-gcc_prefix64="$HOME/toolchains/arter97/bin/aarch64-elf-"
+gcc_prefix64="$HOME/kernel/toolchains/aarch64-8.0/bin/aarch64-linux-android-"
 
 # 32-bit GCC toolchain prefix
 gcc_prefix32="$HOME/toolchains/arter97-32/bin/arm-eabi-"

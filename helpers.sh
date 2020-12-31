@@ -14,7 +14,7 @@
 #### CONFIGURATION ####
 
 # Kernel name
-kernel_name="ProtonKernel"
+kernel_name="EinsteinovKernel"
 
 # Defconfig name
 defconfig="wahoo_defconfig"
@@ -95,6 +95,7 @@ _ksetup_functions+=(
 
 # Get kernel repository root for later use
 kroot="$PWD/$(dirname "$0")"
+#kroot="${CUR_DIR}/${BASH_ARGV[0]}"
 
 # Show an informational message
 function msg() {
@@ -139,7 +140,8 @@ function zver() {
 
 # Make wrapper for kernel compilation
 function kmake() {
-	time make "${kmake_flags[@]}" "$@"
+	#time make "${kmake_flags[@]}" "$@"
+	make "${kmake_flags[@]}" #"$@"
 }
 
 
