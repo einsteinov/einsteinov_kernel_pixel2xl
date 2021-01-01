@@ -433,12 +433,6 @@ config USB_G_HID
 
 	  Say "y" to link the driver statically, or "m" to build a
 	  dynamically linked module called "g_hid".
-	  
-config USB_G_HID_PATCH
-	tristate "Einsteinov Legacy Hid Patch"
-	depends USB_G_HID
-	help
-	  Einsteinov Legacy Hid Patch
 
 # Standalone / single function gadgets
 config USB_G_DBGP
