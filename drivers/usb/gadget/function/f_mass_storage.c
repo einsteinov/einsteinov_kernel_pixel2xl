@@ -226,8 +226,11 @@
 
 
 /*------------------------------------------------------------------------*/
-
+#ifdef CONFIG_USB_CONFIGFS_MASS_STORAGE_PATCH
+#define FSG_DRIVER_DESC		"mass_storage"
+#else
 #define FSG_DRIVER_DESC		"Mass Storage Function"
+#endif
 #define FSG_DRIVER_VERSION	"2009/09/11"
 
 static const char fsg_string_interface[] = "Mass Storage";
@@ -1204,7 +1207,10 @@ static int do_read_capacity(struct fsg_common *common, struct fsg_buffhd *bh)
 		curlun->sense_data = SS_INVALID_FIELD_IN_CDB;
 		return -EINVAL;
 	}
-
+	
+	#ifdef CONFIG_USB_CONFIGFS_MASS_STORAGE_PATCH
+	printk("readcap: %lld/n",curlun->num_sectors-1);
+	#endif
 	put_unaligned_be32(curlun->num_sectors - 1, &buf[0]);
 						/* Max logical block */
 	put_unaligned_be32(curlun->blksize, &buf[4]);/* Block length */
@@ -1232,6 +1238,65 @@ static int do_read_header(struct fsg_common *common, struct fsg_buffhd *bh)
 	store_cdrom_address(&buf[4], msf, lba);
 	return 8;
 }
+
+#ifdef CONFIG_USB_CONFIGFS_MASS_STORAGE_PATCH
+static int do_read_disc_information(struct fsg_common* common, struct fsg_buffhd * bh)
+{
+ struct fsg_lun *curlun = common->curlun;
+  u8* outbuf = (u8*)bh->buf;
+ if (common->cmnd[1] & ~0x02) { /* Mask away MSF */
+ curlun->sense_data = SS_INVALID_FIELD_IN_CDB;
+ return -EINVAL;
+ }
+ memset(outbuf,0,34);
+ outbuf[1] = 32;
+ outbuf[2] = 0xe; /* last session complete, disc finalized */
+ outbuf[3] = 1;   /* first track on disc */
+ outbuf[4] = 1;   /* # of sessions */
+ outbuf[5] = 1;   /* first track of last session */
+ outbuf[6] = 1;   /* last track of last session */
+ outbuf[7] = 0x20; /* unrestricted use */
+ outbuf[8] = 0x00; /* CD-ROM or DVD-ROM */
+ return 34;
+}
+
+static int do_get_configuration(struct fsg_common *common, struct fsg_buffhd *bh)
+{
+ u8* buf = (u8*)bh->buf;
+ int cur;
+ struct fsg_lun *curlun = common->curlun;
+ if (common->cmnd[1] & ~0x02) { /* Mask away MSF */
+ curlun->sense_data = SS_INVALID_FIELD_IN_CDB;
+ return -EINVAL;
+ }
+ if ( curlun->num_sectors > CD_MAX_SECTORS )
+ {
+ printk("Is dvdn");
+ cur = MMC_PROFILE_DVD_ROM;
+ }
+ else
+ cur = MMC_PROFILE_CD_ROM;
+ memset(buf,0,40);
+ put_unaligned_be32(36,&buf[0]);
+ put_unaligned_be16(cur,&buf[6]);
+ buf[10] = 0x03;
+ buf[11] = 8;
+ put_unaligned_be16(MMC_PROFILE_DVD_ROM,&buf[12]);
+ buf[14] = ( cur == MMC_PROFILE_DVD_ROM );
+ put_unaligned_be16(MMC_PROFILE_CD_ROM,&buf[16]);
+ buf[18] = ( cur == MMC_PROFILE_CD_ROM );
+ put_unaligned_be16(1,&buf[20]);
+ buf[22] = 0x08 | 0x03;
+ buf[23] = 8;
+ put_unaligned_be32(1,&buf[24]);
+ buf[28] = 1;
+ put_unaligned_be16(3,&buf[32]);
+ buf[34] = 0x08 | 0x3;
+ buf[35] = 4;
+ buf[36] = 0x39;
+ return 40;
+}
+#endif
 
 static int do_read_toc(struct fsg_common *common, struct fsg_buffhd *bh)
 {
@@ -1977,6 +2042,7 @@ static int do_scsi_command(struct fsg_common *common)
 	case READ_HEADER:
 		if (!common->curlun || !common->curlun->cdrom)
 			goto unknown_cmnd;
+		printk("GET_CONFIGURATION/n");
 		common->data_size_from_cmnd =
 			get_unaligned_be16(&common->cmnd[7]);
 		reply = check_command(common, 10, DATA_DIR_TO_HOST,
@@ -2087,6 +2153,23 @@ static int do_scsi_command(struct fsg_common *common)
 		if (reply == 0)
 			reply = do_write(common);
 		break;
+
+#ifdef CONFIG_USB_CONFIGFS_MASS_STORAGE_PATCH
+ case 0x51://READ_DISC_INFORMATION
+ common->data_size_from_cmnd = 0;
+ if (!common->curlun || !common->curlun->cdrom)
+ goto unknown_cmnd;
+	printk("READ_DISC_INFORMATION/n");
+ reply = do_read_disc_information(common,bh);
+    break;
+ case 0x46://GET_CONFIGURATION
+ common->data_size_from_cmnd = 0;
+ if (!common->curlun || !common->curlun->cdrom)
+ goto unknown_cmnd;
+  printk("GET_CONFIGURATION/n");
+ reply = do_get_configuration(common,bh);
+ break;
+#endif
 
 	/*
 	 * Some mandatory commands that we recognize but don't implement.
