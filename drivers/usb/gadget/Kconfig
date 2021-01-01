@@ -201,6 +201,9 @@ config USB_F_MIDI
 
 config USB_F_HID
 	tristate
+	
+config USB_F_HID_PATCH
+	tristate
 
 config USB_F_PRINTER
 	tristate
@@ -233,8 +236,9 @@ config USB_F_CCID
 	tristate
 
 choice
-	tristate "USB Gadget Drivers"
+	tristate "USB Gadget precomposed configurations"
 	default USB_ETH
+	optional
 	help
 	  A Linux "Gadget Driver" talks to the USB Peripheral Controller
 	  driver through the abstract "gadget" API.  Some other operating
@@ -250,11 +254,17 @@ choice
 	  enough of the right types of endpoints, the gadget driver might
 	  not be able work with that controller, or might need to implement
 	  a less common variant of a device class protocol.
+	  
+	  The available choices each represent a single precomposed USB
+	  gadget configuration. In the device model, each option contains
+	  both the device instanciation as a child for a USB gadget
+	  controller, and the relevant drivers for each function declared
+	  by the device.
 
 # this first set of drivers all depend on bulk-capable hardware.
 
 config USB_CONFIGFS
-	tristate "USB functions configurable through configfs"
+	tristate "USB Gadget functions configurable through configfs"
 	select USB_LIBCOMPOSITE
 	help
 	  A Linux USB "gadget" can be set up through configfs.
@@ -510,6 +520,13 @@ config USB_CONFIGFS_F_HID
 	  Human Interface Devices (HID).
 
 	  For more information, see Documentation/usb/gadget_hid.txt.
+	  
+config USB_CONFIGFS_F_HID_PATCH
+	bool "HID function Einsteinov Patch"
+	depends on USB_CONFIGFS
+	depends on USB_CONFIGFS_F_HID
+	help
+	  Einsteinov Patch.
 
 config USB_CONFIGFS_F_UVC
 	bool "USB Webcam function"
